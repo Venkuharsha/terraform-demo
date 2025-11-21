@@ -26,7 +26,7 @@ module "network" {
   project_id            = var.project_id
   region                = var.region
   vpc_name              = "hackathon-vpc"
-  public_subnet_cidr    = "10.10.0.0/20"
+  #public_subnet_cidr    = "10.10.0.0/20"
   private_subnet_cidr   = "10.10.16.0/20"
   pods_secondary_cidr   = "10.20.0.0/16"
   services_secondary_cidr = "10.21.0.0/20"
