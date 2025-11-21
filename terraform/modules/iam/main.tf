@@ -23,9 +23,7 @@ resource "google_project_iam_member" "storage_viewer" {
   member  = "serviceAccount:${google_service_account.node.email}"
 }
 
-output "node_sa_email" {
-  value = google_service_account.node.email
-}
+
 
 # NEW: CI/CD Service Account (for GitHub Actions)
 resource "google_service_account" "ci_cd" {

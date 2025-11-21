@@ -6,6 +6,4 @@ resource "google_artifact_registry_repository" "repo" {
   project       = var.project_id
 }
 
-output "repo_url" {
-  value = "us-central1-docker.pkg.dev/${var.project_id}/${var.repo_name}"
-}
+
