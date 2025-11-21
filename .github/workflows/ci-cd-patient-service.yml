@@ -1,0 +1,66 @@
+name: CI/CD patient-service
+
+on:
+  push:
+    paths:
+      - 'patient-service/**'
+      - '.github/workflows/ci-cd-patient-service.yml'
+  pull_request:
+    paths:
+      - 'patient-service/**'
+      - '.github/workflows/ci-cd-patient-service.yml'
+
+jobs:
+  build-deploy:
+    runs-on: ubuntu-latest
+    env:
+      PROJECT_ID: ${{ secrets.GCP_PROJECT }}
+      REGION: ${{ secrets.GCP_REGION }}
+      REPO: hackathon-repo
+      IMAGE_NAME: patient-service
+      CLUSTER_NAME: hackathon-gke-dev
+      NAMESPACE: hackathon
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Build & Test
+        working-directory: patient-service
+        run: |
+          npm ci
+          npm test || true
+          npm run build || true
+
+      - name: Authenticate to GCP
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - name: Configure Docker
+        run: gcloud auth configure-docker "${{ env.REGION }}-docker.pkg.dev" --quiet
+
+      - name: Build & Push Image
+        working-directory: patient-service
+        run: |
+          TAG=sha-${{ github.sha }}
+          REG="${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPO }}"
+          docker build -t "$REG/${{ env.IMAGE_NAME }}:$TAG" -t "$REG/${{ env.IMAGE_NAME }}:latest" .
+          docker push "$REG/${{ env.IMAGE_NAME }}:$TAG"
+          docker push "$REG/${{ env.IMAGE_NAME }}:latest"
+
+      - name: Get GKE Credentials
+        run: gcloud container clusters get-credentials "${{ env.CLUSTER_NAME }}" --region "${{ env.REGION }}" --project "${{ env.PROJECT_ID }}"
+
+      - name: Ensure namespace exists
+        run: kubectl apply -f k8s/base/namespace.yaml
+
+      - name: Deploy
+        run: |
+          kubectl -n "${{ env.NAMESPACE }}" set image deployment/${{ env.IMAGE_NAME }} ${{ env.IMAGE_NAME }}="${REG}/${{ env.IMAGE_NAME }}:latest" || \
+          kubectl -n "${{ env.NAMESPACE }}" apply -f k8s/base/${{ env.IMAGE_NAME }}-deployment.yaml
+          kubectl -n "${{ env.NAMESPACE }}" rollout status deployment/${{ env.IMAGE_NAME }} --timeout=120s
