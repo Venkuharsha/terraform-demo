@@ -1,0 +1,23 @@
+name: Terraform Lint and Validate
+
+on:
+  pull_request:
+    paths:
+      - 'terraform/**'
+
+jobs:
+  lint-validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+
+      - name: Format
+        working-directory: terraform
+        run: terraform fmt -check -recursive
+
+      - name: Validate
+        working-directory: terraform
+        run: |
+          terraform init -backend=false
+          terraform validate
