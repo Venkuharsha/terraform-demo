@@ -22,7 +22,7 @@ provider "google" {
 
 # Network (VPC + subnets + NAT)
 module "network" {
-  source                = "../modules/network"
+  source                = "./modules/network"
   project_id            = var.project_id
   region                = var.region
   vpc_name              = "hackathon-vpc"
@@ -34,7 +34,7 @@ module "network" {
 
 # Artifact Registry
 module "artifact" {
-  source      = "../modules/artifact"
+  source      = "./modules/artifact"
   project_id  = var.project_id
   region      = var.region
   repo_name   = "hackathon-repo"
@@ -42,14 +42,14 @@ module "artifact" {
 
 # IAM for node SA
 module "iam" {
-  source             = "../modules/iam"
+  source             = "./modules/iam"
   project_id         = var.project_id
   node_sa_name       = "gke-node-sa"
 }
 
 # GKE cluster
 module "gke" {
-  source                 = "../modules/gke"
+   source                = "./modules/gke"
   project_id             = var.project_id
   region                 = var.region
   cluster_name           = "hackathon-gke-dev"
